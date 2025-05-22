@@ -107,7 +107,10 @@ function addAndStoreCurrentLocation(lat, lon) {   // Vorherigen blauen Kreis gr√
 
 
 function initMap() {
-    map = L.map('map').setView([0, 0], 2);
+    map = L.map('map', {
+  	zoomControl: false
+    }).setView([0, 0], 2);
+
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
