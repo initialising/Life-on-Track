@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life on Track</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main container -->
+    <div id="container">
+        <!-- Map Section -->
+        <div id="map" class="section">
+            <!-- Map will be displayed here -->
+        </div>
+
+        <!-- Stats Section -->
+        <div id="stats" class="section">
+            <h2>Stats</h2>
+            <p>Districts/Neighborhoods Covered: <span id="districtsCovered">0%</span></p>
+            <p>Cities Covered: <span id="citiesCovered">0%</span></p>
+            <p>Countries Covered: <span id="countriesCovered">0%</span></p>
+            <p>World Coverage: <span id="worldCoverage">0%</span></p>
+
+            <h3>Upload Google Maps Timeline</h3>
+            <input type="file" id="timelineUpload" accept=".json" />
+            <p id="uploadStatus"></p>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div id="leaderboard" class="section">
+            <h2>Leaderboard</h2>
+            <ul id="leaderboardList">
+                <!-- Leaderboard items will go here -->
+            </ul>
+        </div>
+        
+        <!-- Hotbar navigation -->
+        <div id="hotbar">
+            <div class="icon" id="mapIcon">🌍</div>
+            <div class="icon" id="statsIcon">📊</div>
+            <div class="icon" id="leaderboardIcon">🏆</div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

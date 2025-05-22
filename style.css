@@ -1,0 +1,60 @@
+/* Reset basic styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+/* Container layout */
+#container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Sections */
+.section {
+    flex: 1;
+    display: none;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+/* Map */
+#map {
+    height: calc(100% - 60px); /* Hotbar height is 60px */
+    width: 100%;
+}
+
+/* Hotbar styling */
+#hotbar {
+    height: 60px;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #ccc;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.icon {
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.icon:hover {
+    background-color: #e0e0e0;
+    border-radius: 50%;
+}
+
+/* Display active section */
+.section.active {
+    display: block;
+}
