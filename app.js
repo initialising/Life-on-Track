@@ -13,6 +13,59 @@ const visitFrequencyMap = {}; // Für spätere Nutzung (z B. Farbintensität)
 
 let countryGeoJson = null;
 
+let trackingWatcherId = null;
+let lastTrackedPosition = null;
+
+// Distance calculation helper
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Earth radius in meters
+    const toRad = angle => angle * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+// Start tracking movement
+function startTracking() {
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported.");
+        return;
+    }
+
+    trackingWatcherId = navigator.geolocation.watchPosition(position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        if (!lastTrackedPosition || getDistanceInMeters(lat, lon, lastTrackedPosition.lat, lastTrackedPosition.lon) > 10) {
+            lastTrackedPosition = { lat, lon };
+            drawAndSaveGreenCircle(lat, lon);
+            console.log("New point saved from tracking:", lat, lon);
+        }
+
+    }, error => {
+        console.error("Tracking error:", error);
+    }, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+    });
+}
+
+// Optional: Stop tracking
+function stopTracking() {
+    if (trackingWatcherId !== null) {
+        navigator.geolocation.clearWatch(trackingWatcherId);
+        trackingWatcherId = null;
+        console.log("Tracking stopped.");
+    }
+}
+
 // Länder-Grenzdaten laden und Stats initialisieren
 function loadCountryGeoJson() {
     fetch('countries.geojson')
@@ -400,4 +453,5 @@ window.onload = () => {
     loadCountryGeoJson();
     updateLeaderboard();
     showSection('map');
+    startTracking();
 };
