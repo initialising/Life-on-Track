@@ -66,6 +66,7 @@ function stopTracking() {
     }
 }
 
+
 // Länder-Grenzdaten laden und Stats initialisieren
 function loadCountryGeoJson() {
     fetch('countries.geojson')
@@ -414,23 +415,78 @@ function saveVisitedCircle(lat, lon) {
 
 
 // Herstellen besuchter Orte
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const toRad = (value) => value * Math.PI / 180;
+    const R = 6371000; // Erdradius in Metern
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 function loadVisitedCircles() {
     const circles = JSON.parse(localStorage.getItem('visitedCircles') || '[]');
-    const seen = new Set();
+    const uniqueCircles = [];
+
     let count = 0;
 
     for (const { lat, lon } of circles) {
-        // Runde auf 5 Dezimalstellen (ungefähr 1 m Genauigkeit) zum Duplikat-Erkennen
-        const key = `${lat.toFixed(5)}-${lon.toFixed(5)}`;
-        if (!seen.has(key)) {
-            seen.add(key);
+        let isDuplicate = false;
+
+        for (const existing of uniqueCircles) {
+            const distance = getDistanceMeters(lat, lon, existing.lat, existing.lon);
+            if (distance < 10) {
+                isDuplicate = true;
+                break;
+            }
+        }
+
+        if (!isDuplicate) {
+            uniqueCircles.push({ lat, lon });
             colorAreaGreen(lat, lon);
             count++;
-            if (count >= 1000) break; // Lade maximal 1000 Kreise
+            if (count >= 1000) break;
         }
     }
 
     console.log(`Loaded ${count} unique visited circles.`);
+}
+
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Circle } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+
+function MapComponent() {
+  const [locations, setLocations] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "locations"), (snapshot) => {
+      const newLocations = snapshot.docs.map(doc => doc.data());
+      setLocations(newLocations);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return (
+    <MapContainer center={[0, 0]} zoom={2} style={{ height: "100vh" }}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {locations.map((loc, idx) => (
+        <Circle
+          key={idx}
+          center={[loc.latitude, loc.longitude]}
+          radius={20}
+          pathOptions={{ color: 'green' }}
+        />
+      ))}
+    </MapContainer>
+  );
 }
 
 
