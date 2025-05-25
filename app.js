@@ -66,7 +66,6 @@ function stopTracking() {
     }
 }
 
-
 // Länder-Grenzdaten laden und Stats initialisieren
 function loadCountryGeoJson() {
     fetch('countries.geojson')
@@ -119,7 +118,7 @@ function initStatsFromLocalStorage() {
     const countedCountries = new Set();
 
     visitedDistricts = circles.length;
-    visitedCountries = 0; // <--- HIER hinzufügen, damit bei jedem Aufruf korrekt neu gezählt wird
+    visitedCountries = 0; // Damit bei jedem Aufruf neu gezählt wird
 
     circles.forEach(c => {
         const country = getCountryFromGeoJSON(c.lat, c.lon);
@@ -132,7 +131,8 @@ function initStatsFromLocalStorage() {
     updateStats();
 }
 
-function addAndStoreCurrentLocation(lat, lon) {   // Vorherigen blauen Kreis grün färben und speichern
+function addAndStoreCurrentLocation(lat, lon) {
+    // Vorherigen blauen Kreis grün färben und speichern
     if (lastBlueCircle) {
         lastBlueCircle.setStyle({
             fillColor: 'rgb(107, 142, 35)',
@@ -159,12 +159,10 @@ function addAndStoreCurrentLocation(lat, lon) {   // Vorherigen blauen Kreis gr�
     lastBlueCircle = blueCircle;
 }
 
-
 function initMap() {
     map = L.map('map', {
-  	zoomControl: false
+        zoomControl: false
     }).setView([0, 0], 2);
-
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
@@ -254,7 +252,6 @@ function drawAndSaveGreenCircle(lat, lon) { //speichert grüne Kreise
     saveVisitedCircle(lat, lon);
 }
 
-
 function showSection(sectionId) {
     const sections = document.querySelectorAll('.section');
     sections.forEach(s => s.classList.remove('active'));
@@ -264,10 +261,8 @@ function showSection(sectionId) {
         setTimeout(() => {
             map.invalidateSize();
         }, 200);
-   }
-} 
-
-
+    }
+}
 
 function updateStats() {
     const districtsPercentage = (visitedDistricts / totalDistricts) * 100;
@@ -314,200 +309,4 @@ document.getElementById('timelineUpload').addEventListener('change', function (e
             const data = JSON.parse(e.target.result);
             await processTimelineData(data);
             status.textContent = 'File uploaded and processed successfully!';
-        } catch (err) {
-            console.error(err);
-            status.textContent = 'Failed to parse file. Make sure it’s a valid Google Maps JSON export.';
-        }
-    };
-
-    reader.readAsText(file);
-});
-
-async function processTimelineData(data) {
-    if (!data.timelineObjects) {
-        console.warn("timelineObjects not found in JSON");
-        return;
-    }
-
-    let locationCount = 0;
-
-    for (const obj of data.timelineObjects) {
-        if (obj.placeVisit && obj.placeVisit.location) {
-            const lat = obj.placeVisit.location.latitudeE7 / 1e7;
-            const lon = obj.placeVisit.location.longitudeE7 / 1e7;
-
-            const area = await getAreaFromCoordinates(lat, lon);
-
-            if (!visitedAreas.includes(area)) {
-                visitedAreas.push(area);
-            }
-
-            colorAreaGreen(lat, lon); // <-- richtige Koordinaten
-
-            locationCount++;
-        }
-    }
-
-    console.log(`Processed ${locationCount} locations.`);
-}
-
-async function getAreaFromCoordinates(lat, lon) {
-    const key = `${Math.floor(lat * 100)}-${Math.floor(lon * 100)}`;
-
-    if (areaCache[key]) {
-        return areaCache[key];
-    }
-
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'LifeOnTrackApp/1.0 (your_email@example.com)'
-            }
-        });
-        const data = await response.json();
-        if (data.address) {
-            const { city, town, village, state, country } = data.address;
-            const areaName = city || town || village || state || country || key;
-            areaCache[key] = areaName;
-            return areaName;
-        }
-    } catch (error) {
-        console.error('Reverse geocoding failed:', error);
-    }
-
-    areaCache[key] = key;
-    return key;
-}
-
-function colorAreaGreen(lat, lon) {
-    L.circle([lat, lon], {
-        radius: 10,
-        fillColor: 'rgb(107, 142, 35)', // richtiges grün
-        color: 'green',
-        weight: 0.5,
-        fillOpacity: 0.5
-    }).addTo(map);
-
-    saveVisitedCircle(lat, lon); 
-}
-
-// Speichern besuchter Orte
-function saveVisitedCircle(lat, lon) {
-    const precision = 1e-4; // ca. 11 Meter Genauigkeit
-    const roundedLat = Math.round(lat / precision) * precision;
-    const roundedLon = Math.round(lon / precision) * precision;
-
-    const circles = JSON.parse(localStorage.getItem('visitedCircles') || '[]');
-
-    const distanceThreshold = 0.0001; // ~10m
-
-    const alreadyExists = circles.some(c => {
-    return Math.abs(c.lat - lat) < distanceThreshold && Math.abs(c.lon - lon) < distanceThreshold;
-    });
-
-
-    if (!alreadyExists) {
-        circles.push({ lat: roundedLat, lon: roundedLon });
-        localStorage.setItem('visitedCircles', JSON.stringify(circles));
-    }
-}
-
-
-// Herstellen besuchter Orte
-function getDistanceMeters(lat1, lon1, lat2, lon2) {
-    const toRad = (value) => value * Math.PI / 180;
-    const R = 6371000; // Erdradius in Metern
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-function loadVisitedCircles() {
-    const circles = JSON.parse(localStorage.getItem('visitedCircles') || '[]');
-    const uniqueCircles = [];
-
-    let count = 0;
-
-    for (const { lat, lon } of circles) {
-        let isDuplicate = false;
-
-        for (const existing of uniqueCircles) {
-            const distance = getDistanceMeters(lat, lon, existing.lat, existing.lon);
-            if (distance < 10) {
-                isDuplicate = true;
-                break;
-            }
-        }
-
-        if (!isDuplicate) {
-            uniqueCircles.push({ lat, lon });
-            colorAreaGreen(lat, lon);
-            count++;
-            if (count >= 1000) break;
-        }
-    }
-
-    console.log(`Loaded ${count} unique visited circles.`);
-}
-
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Circle } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-
-function MapComponent() {
-  const [locations, setLocations] = useState([]);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "locations"), (snapshot) => {
-      const newLocations = snapshot.docs.map(doc => doc.data());
-      setLocations(newLocations);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  return (
-    <MapContainer center={[0, 0]} zoom={2} style={{ height: "100vh" }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {locations.map((loc, idx) => (
-        <Circle
-          key={idx}
-          center={[loc.latitude, loc.longitude]}
-          radius={20}
-          pathOptions={{ color: 'green' }}
-        />
-      ))}
-    </MapContainer>
-  );
-}
-
-
-document.getElementById('mapIcon').addEventListener('click', () => {
-    showSection('map');
-    focusCurrentLocation();
-});
-document.getElementById('statsIcon').addEventListener('click', () => {
-    showSection('stats');
-    updateStats();
-});
-document.getElementById('leaderboardIcon').addEventListener('click', () => {
-    showSection('leaderboard');
-    updateLeaderboard();
-});
-
-window.onload = () => {
-    initMap();
-    loadVisitedCircles();
-    loadCountryGeoJson();
-    updateLeaderboard();
-    showSection('map');
-    startTracking();
-};
+        } catch (err
